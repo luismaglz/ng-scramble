@@ -75,7 +75,7 @@ export class NgScramble {
       characters.every((c) => c.length === 1)
     ) {
       this.scrambleCharacters = characters;
-    } else {
+    } else if (typeof characters === 'string') {
       this.scrambleCharacters = (characters || this._defaultSet).split('');
     }
   }
