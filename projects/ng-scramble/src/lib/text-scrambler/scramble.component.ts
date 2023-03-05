@@ -35,14 +35,20 @@ export class NgScramble {
    * type boolean
    * default false
    */
-  @Input() consistentSize: boolean = false;
+  @Input() set consistentSize(consitent: boolean) {
+    this._consitentSize.next(consitent);
+  }
+
+  protected _consitentSize: BehaviorSubject<boolean> = new BehaviorSubject(
+    false
+  );
 
   /**
    * Array of strings to cycle through by scrambling
    */
   @Input() set content(items: string[]) {
     if (items) {
-      this._text$.next(items);
+      this._valueArray.next(items);
     }
   }
 
@@ -68,17 +74,8 @@ export class NgScramble {
    * type string
    * default: '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?'
    */
-  @Input() set characterSet(characters: string | string[]) {
-    if (
-      Array.isArray(characters) &&
-      characters.length > 0 &&
-      characters.every((c) => c.length === 1)
-    ) {
-      this.scrambleCharacters = characters;
-    } else if (typeof characters === 'string') {
-      this.scrambleCharacters = (characters || this._defaultSet).split('');
-    }
-  }
+  @Input() characterSet: string =
+    '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?';
 
   /**
    * Number in ms to define the interval at which the main loop is run.
@@ -106,31 +103,19 @@ export class NgScramble {
    */
   @Input() textSelection: 'ORDER' | 'RANDOM' = 'RANDOM';
 
-  protected _defaultSet: string =
-    '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?';
-
   // Keeps track of the cycles to display the text once unscrambled
   protected textDisplayCount: number = 0;
 
   // Split characters to use to scramble the text
-  protected scrambleCharacters: string[] = this._defaultSet.split('');
+  protected scrambleCharacters: string[] = this.characterSet.split('');
 
   // Main scramble sumbscription
   protected subscription: Subscription | undefined;
 
   // Behavior subject containing all the strings to transition between
-  protected _text$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(
-    []
-  );
-
-  protected texts$: Observable<string[]> = this._text$.pipe(
-    map((text) => {
-      if (this.consistentSize) {
-        return padText(text);
-      }
-      return text;
-    })
-  );
+  protected _valueArray: BehaviorSubject<string[]> = new BehaviorSubject<
+    string[]
+  >([]);
 
   // Original text being scrambled / unscrambled
   protected activeText: string = '';
@@ -141,10 +126,22 @@ export class NgScramble {
   // Status for the loop to transition between scramble, showing or unscrambling
   protected status: 'UNSCRAMBLING' | 'SCRAMBLING' | 'SHOWING' = 'UNSCRAMBLING';
 
+  protected activeIndex: number = 0;
+
   protected scrambler$: Observable<string> = this.interval$.pipe(
     switchMap((intervalValue) =>
-      combineLatest([this.texts$, interval(intervalValue)]).pipe(
-        map(([quotes]) => this.scrambleLoop(quotes))
+      combineLatest([
+        this._valueArray,
+        interval(intervalValue),
+        this._consitentSize,
+      ]).pipe(
+        map(([textArray, , consistentSize]) => {
+          if (consistentSize) {
+            return this.scrambleLoop(padText(textArray));
+          } else {
+            return this.scrambleLoop(textArray);
+          }
+        })
       )
     )
   );
@@ -230,16 +227,10 @@ export class NgScramble {
     }
 
     if (this.textSelection === 'ORDER') {
-      if (!this.activeText) {
-        this.activeText = textArray[0];
-      } else {
-        const currentIndex = this.content.findIndex(
-          (t) => t === this.activeText
-        );
-        this.activeText =
-          textArray[currentIndex + 1] !== undefined
-            ? textArray[currentIndex + 1]
-            : textArray[0];
+      this.activeText = this.content[this.activeIndex];
+      this.activeIndex++;
+      if (!this.content[this.activeIndex]) {
+        this.activeIndex = 0;
       }
     }
     this.scrambledText = scrambleText(this.activeText, this.scrambleCharacters);
