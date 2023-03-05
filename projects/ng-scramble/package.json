@@ -1,0 +1,19 @@
+{
+  "name": "ng-scramble",
+  "author": "Luis Gonzalez",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^15.1.0",
+    "@angular/core": "^15.1.0",
+    "lodash": "^4.17.21"
+  },
+  "repository": "https://github.com/luismaglz/ng-scramble",
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.191"
+  },
+  "sideEffects": false,
+  "license": "MIT"
+}
