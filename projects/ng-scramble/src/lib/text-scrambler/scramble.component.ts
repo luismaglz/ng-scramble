@@ -227,10 +227,11 @@ export class NgScramble {
     }
 
     if (this.textSelection === 'ORDER') {
-      this.activeText = this.content[this.activeIndex];
-      this.activeIndex++;
-      if (!this.content[this.activeIndex]) {
+      this.activeText = textArray[this.activeIndex];
+      if (!textArray[this.activeIndex + 1]) {
         this.activeIndex = 0;
+      } else {
+        this.activeIndex++;
       }
     }
     this.scrambledText = scrambleText(this.activeText, this.scrambleCharacters);
