@@ -1,17 +1,19 @@
-import { max, padEnd, padStart } from 'lodash';
+import { max, pad, padEnd, padStart } from 'lodash';
 
 export function padText(
   quotes: string[],
-  pad: 'left' | 'right' = 'left'
+  padMethod: 'LEFT' | 'RIGHT' | 'CENTER' = 'LEFT'
 ): string[] {
   const maxLength = max(quotes.map((q) => q.length)) || 0;
   const padChar: string = '\u00A0';
 
   return quotes.map((quote) => {
-    if (pad === 'left') {
+    if (padMethod === 'LEFT') {
       return padStart(quote, maxLength, padChar);
-    } else {
+    } else if (padMethod === 'RIGHT') {
       return padEnd(quote, maxLength, padChar);
+    } else {
+      return pad(quote, maxLength, padChar);
     }
   });
 }

@@ -1,7 +1,7 @@
 {
   "name": "ng-scramble",
   "author": "Luis Gonzalez",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "peerDependencies": {
     "@angular/common": "^15.1.0",
     "@angular/core": "^15.1.0",

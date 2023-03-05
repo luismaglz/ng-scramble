@@ -3,11 +3,13 @@ import { Component, Input } from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
+  Subject,
   Subscription,
   combineLatest,
   interval,
   map,
   switchMap,
+  takeUntil,
 } from 'rxjs';
 import { isTextFullyScrambled } from './utilities/is-text-fully-scrambled';
 import { padText } from './utilities/pad-text';
@@ -44,6 +46,21 @@ export class NgScramble {
   );
 
   /**
+   * Number of times to reshuffle each character in the scrambled text
+   */
+  @Input() timesToRescamble: number | undefined;
+
+  /**
+   * Whether to pad the text right, center or left, this only works if consistentSize is set to true
+   */
+  @Input() padDirection: 'LEFT' | 'RIGHT' | 'CENTER' = 'LEFT';
+
+  /**
+   * Whether to continuosly loop through the text, currently it only works with textSelection 'ORDER'
+   */
+  @Input() loop: boolean = true;
+
+  /**
    * Array of strings to cycle through by scrambling
    */
   @Input() set content(items: string[]) {
@@ -75,7 +92,7 @@ export class NgScramble {
    * default: '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?'
    */
   @Input() characterSet: string =
-    '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?';
+    '123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
 
   /**
    * Number in ms to define the interval at which the main loop is run.
@@ -124,20 +141,28 @@ export class NgScramble {
   protected scrambledText: string = '';
 
   // Status for the loop to transition between scramble, showing or unscrambling
-  protected status: 'UNSCRAMBLING' | 'SCRAMBLING' | 'SHOWING' = 'UNSCRAMBLING';
+  protected status: 'UNSCRAMBLING' | 'SCRAMBLING' | 'RESHUFFLE' | 'SHOWING' =
+    'UNSCRAMBLING';
+
+  protected end$: Subject<void> = new Subject<void>();
 
   protected activeIndex: number = 0;
+  protected reScrambleCount: number = 0;
+  protected reScrambleOriginal: string = '';
+
+  protected previousScramble: string = '';
 
   protected scrambler$: Observable<string> = this.interval$.pipe(
+    takeUntil(this.end$),
     switchMap((intervalValue) =>
       combineLatest([
         this._valueArray,
-        interval(intervalValue),
+        interval(intervalValue).pipe(takeUntil(this.end$)),
         this._consitentSize,
       ]).pipe(
         map(([textArray, , consistentSize]) => {
           if (consistentSize) {
-            return this.scrambleLoop(padText(textArray));
+            return this.scrambleLoop(padText(textArray, this.padDirection));
           } else {
             return this.scrambleLoop(textArray);
           }
@@ -149,27 +174,63 @@ export class NgScramble {
   /**
    * Main scramble loop
    */
-  scrambleLoop(quotes: string[]): string {
+  scrambleLoop(contentArray: string[]): string {
     if (!this.activeText) {
-      this.selectNewText(quotes);
+      this.selectNewText(contentArray);
     }
 
-    if (this.status === 'UNSCRAMBLING') {
-      this.scrambledText = this.unscramble();
-      if (this.scrambledText === this.activeText) {
-        this.status = 'SHOWING';
+    switch (this.status) {
+      case 'UNSCRAMBLING': {
+        this.scrambledText = this.unscramble();
+        if (this.scrambledText === this.activeText) {
+          this.status = 'SHOWING';
+        }
+        break;
       }
-    } else if (this.status === 'SHOWING') {
-      this.textDisplayCount++;
-      if (this.textDisplayCount > this.displayCycles) {
-        this.status = 'SCRAMBLING';
+      case 'SHOWING': {
+        if (
+          this.loop === false &&
+          contentArray.indexOf(this.activeText) === contentArray.length - 1
+        ) {
+          this.end$.next();
+          break;
+        }
+        this.textDisplayCount++;
+        if (this.textDisplayCount > this.displayCycles) {
+          this.status = 'SCRAMBLING';
+        }
+        break;
       }
-    } else {
-      this.scrambledText = this.scramble();
+      case 'SCRAMBLING': {
+        if (isTextFullyScrambled(this.scrambledText, this.activeText)) {
+          if (this.timesToRescamble) {
+            this.status = 'RESHUFFLE';
+            this.reScrambleOriginal = this.scrambledText;
+          } else {
+            this.selectNewText(contentArray);
+            this.status = 'UNSCRAMBLING';
+          }
+          break;
+        }
+        this.scrambledText = this.scramble(this.activeText);
+        break;
+      }
+      case 'RESHUFFLE': {
+        if (this.reScrambleCount === this.timesToRescamble) {
+          this.status = 'UNSCRAMBLING';
+          this.reScrambleCount = 0;
+          this.selectNewText(contentArray);
+          break;
+        } else {
+          this.scrambledText = this.scramble(this.reScrambleOriginal);
+        }
 
-      if (isTextFullyScrambled(this.scrambledText, this.activeText)) {
-        this.selectNewText(quotes);
-        this.status = 'UNSCRAMBLING';
+        if (isTextFullyScrambled(this.scrambledText, this.reScrambleOriginal)) {
+          this.reScrambleCount++;
+          this.reScrambleOriginal = this.scrambledText;
+        }
+
+        break;
       }
     }
 
@@ -179,17 +240,17 @@ export class NgScramble {
   /**
    * Scramble strategy selector
    */
-  scramble(): string {
+  scramble(originalText: string): string {
     switch (this.scrambleMethod) {
       case 'LEFT-TO-RIGHT':
         return scrambleLeftToRight(
-          this.activeText,
+          originalText,
           this.scrambledText,
           this.scrambleCharacters
         );
       case 'RIGHT-TO-LEFT':
         return scrambleRightToLeft(
-          this.activeText,
+          originalText,
           this.scrambledText,
           this.scrambleCharacters
         );
@@ -197,7 +258,7 @@ export class NgScramble {
       default:
         return scrambleRandom(
           this.scrambledText,
-          this.activeText,
+          originalText,
           this.scrambleCharacters
         );
     }

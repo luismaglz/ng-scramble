@@ -80,6 +80,8 @@ To render it in the template
 ></ng-scramble>
 ```
 
+[Live Example](https://stackblitz.com/edit/angular-vhojwt?file=src%2Fmain.ts)
+
 ## Inputs
 
 - content
@@ -101,7 +103,7 @@ To render it in the template
   - default: 'RANDOM'
 - characterSet
   - description: Character set in the form of a string to use for scrambling the text. It will take the string provided and perform a split('') to turn it into an array
-  - default: '123456789!@#$%^&()\_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?'
+  - default: '123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'
 - cycleInterval
   - description: Number in ms to define the interval at which the main loop is run. Every loop execution will either unscramble a single character, show the unscrambled text or scramble a sigle character
   - type: number
@@ -116,6 +118,18 @@ To render it in the template
   - values:
     - 'ORDER' will use the array order to select the next string and loop back to the beginning
     - 'RANDOM' will use a random selection
+- padDirection
+  - description: Whether to pad the text right, center or left, this only works if consistentSize is set to true
+  - values: 'LEFT' | 'RIGHT' | 'CENTER'
+  - default: 'LEFT'
+- timesToRescamble
+  - description: Number of times to reshuffle each character in the scrambled text
+  - type: number
+  - default: 0
+- loop
+  - description:  Whether to continuosly loop through the text, currently it only works with textSelection 'ORDER'
+  - type: boolean
+  - default: true
 
 ## License
 
