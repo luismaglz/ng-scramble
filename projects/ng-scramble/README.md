@@ -55,7 +55,7 @@ It is configured as a standalone component so it can either be imported into a m
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [CommonModule, NgScrambleText],
+  imports: [CommonModule, NgScramble],
 })
 ```
 

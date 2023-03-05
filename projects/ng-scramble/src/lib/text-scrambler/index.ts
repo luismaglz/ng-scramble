@@ -1,1 +1,1 @@
-export * from './scramble-text.component';
+export * from './scramble.component';

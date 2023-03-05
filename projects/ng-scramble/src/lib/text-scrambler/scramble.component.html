@@ -1,0 +1,5 @@
+<span
+  *ngIf="scrambler$"
+  class="scrambled-text"
+  [innerHTML]="scrambler$ | async"
+></span>

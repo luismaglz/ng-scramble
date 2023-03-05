@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NgScrambleText } from './scramble-text.component';
+import { NgScramble } from './scramble.component';
 
 describe('ScrambleTextComponent', () => {
-  let component: NgScrambleText;
-  let fixture: ComponentFixture<NgScrambleText>;
+  let component: NgScramble;
+  let fixture: ComponentFixture<NgScramble>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NgScrambleText],
+      imports: [NgScramble],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(NgScrambleText);
+    fixture = TestBed.createComponent(NgScramble);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -7,6 +7,7 @@ import {
   combineLatest,
   interval,
   map,
+  switchMap,
 } from 'rxjs';
 import { isTextFullyScrambled } from './utilities/is-text-fully-scrambled';
 import { padText } from './utilities/pad-text';
@@ -21,12 +22,12 @@ import { unscrambleRightToLeft } from './utilities/unscramble-right-to-left';
 
 @Component({
   selector: 'ng-scramble',
-  templateUrl: './scramble-text.component.html',
-  styleUrls: ['./scramble-text.component.scss'],
+  templateUrl: './scramble.component.html',
+  styleUrls: ['./scramble.component.scss'],
   standalone: true,
   imports: [CommonModule],
 })
-export class NgScrambleText {
+export class NgScramble {
   /**
    * Whether to pad every string in the array to match the longest string found so
    * the scramble always returns to the same size.
@@ -76,7 +77,11 @@ export class NgScrambleText {
    * type number
    * default: 10
    */
-  @Input() cycleInterval: number = 10;
+  @Input() set cycleInterval(cycleInterval: number) {
+    this.interval$.next(cycleInterval || 10);
+  }
+
+  interval$: BehaviorSubject<number> = new BehaviorSubject<number>(10);
 
   /**
    * Defines how many loop cycles to display the unscrambled text for
@@ -124,10 +129,13 @@ export class NgScrambleText {
   // Status for the loop to transition between scramble, showing or unscrambling
   protected status: 'UNSCRAMBLING' | 'SCRAMBLING' | 'SHOWING' = 'UNSCRAMBLING';
 
-  protected scrambler$: Observable<string> = combineLatest([
-    this.texts$,
-    interval(this.cycleInterval),
-  ]).pipe(map(([quotes]) => this.scrambleLoop(quotes)));
+  protected scrambler$: Observable<string> = this.interval$.pipe(
+    switchMap((intervalValue) =>
+      combineLatest([this.texts$, interval(intervalValue)]).pipe(
+        map(([quotes]) => this.scrambleLoop(quotes))
+      )
+    )
+  );
 
   /**
    * Main scramble loop
