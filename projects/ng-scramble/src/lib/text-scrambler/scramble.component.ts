@@ -68,8 +68,17 @@ export class NgScramble {
    * type string
    * default: '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?'
    */
-  @Input() characterSet: string =
-    '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?';
+  @Input() set characterSet(characters: string | string[]) {
+    if (
+      Array.isArray(characters) &&
+      characters.length > 0 &&
+      characters.every((c) => c.length === 1)
+    ) {
+      this.scrambleCharacters = characters;
+    } else {
+      this.scrambleCharacters = (characters || this._defaultSet).split('');
+    }
+  }
 
   /**
    * Number in ms to define the interval at which the main loop is run.
@@ -97,11 +106,14 @@ export class NgScramble {
    */
   @Input() textSelection: 'ORDER' | 'RANDOM' = 'RANDOM';
 
+  protected _defaultSet: string =
+    '123456789!@#$%^&()_+qwertyuiop[]asdfghjkl;zxcvbnmQWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>?';
+
   // Keeps track of the cycles to display the text once unscrambled
   protected textDisplayCount: number = 0;
 
   // Split characters to use to scramble the text
-  protected scrambleCharacters: string[] = this.characterSet.split('');
+  protected scrambleCharacters: string[] = this._defaultSet.split('');
 
   // Main scramble sumbscription
   protected subscription: Subscription | undefined;
