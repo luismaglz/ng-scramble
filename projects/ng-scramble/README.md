@@ -4,7 +4,7 @@
     </b>
 </h1>
 
-<p align="center">Angular component for transitioning between strings with a scramble effect</p>
+<p align="center">Scramble transition effect for strings</p>
 
 ## Table of Contents
 
